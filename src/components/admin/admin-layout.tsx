@@ -70,6 +70,7 @@ const SUPERADMIN_MENU_ITEMS = [
 const CHILD_ADMIN_MENU_ITEMS = [
   { id: 'users', label: 'จัดการผู้ใช้', icon: Users },
   { id: 'support', label: 'แจ้งปัญหา', icon: MessageSquare },
+  { id: 'categories', label: 'จัดการหมวดหมู่สินค้า', icon: Package },
   { id: 'local-products', label: 'จัดการสินค้าภายในร้าน', icon: Package },
   { id: 'local-stock', label: 'จัดการสต๊อกสินค้าภายในร้าน', icon: Package },
   { id: 'products', label: 'จัดการราคาสินค้าของร้านหลัก', icon: Package },

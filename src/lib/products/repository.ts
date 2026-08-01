@@ -75,7 +75,7 @@ export const getAllCategoriesCached = unstable_cache(
     return await getAllCategories(onlyPublishedWithStock);
   },
   ["categories-list-master-contract-v2"],
-  { tags: ["products"], revalidate: 604800 }
+  { tags: ["categories", "products"], revalidate: 604800 }
 );
 
 export async function upsertProductsFromExternal(
@@ -295,7 +295,15 @@ export async function getAllCategories(
 
     // 1. Fetch Categories defined in DB
     const [catRows] = await pool.execute(
-      "SELECT id, name, image_url, display_order FROM categories WHERE is_active = 1 ORDER BY display_order ASC, name ASC"
+      `SELECT id, name, image_url, display_order
+       FROM categories
+       WHERE is_active = 1
+         AND (
+           (COALESCE(is_local, 0) = 0 AND (site_id IS NULL OR site_id = '' OR site_id = 'main'))
+           OR (is_local = 1 AND site_id = ?)
+         )
+       ORDER BY display_order ASC, name ASC`,
+      [siteId]
     );
     const catList = catRows as any[];
 

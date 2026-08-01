@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth/server";
 import {
@@ -9,6 +10,15 @@ import {
   getCategoryById,
 } from "@/lib/categories/repository";
 import { sendAdminAuditWebhook } from "@/lib/discord/admin-audit";
+import { getSiteId } from "@/lib/site";
+
+function revalidateCategoryViews() {
+  revalidateTag("categories", { expire: 0 });
+  revalidateTag("products", { expire: 0 });
+  revalidatePath("/");
+  revalidatePath("/admin");
+  revalidatePath("/api/products");
+}
 
 const createSchema = z.object({
   name: z.string().min(1, "ชื่อหมวดหมู่ต้องไม่ว่าง"),
@@ -26,6 +36,14 @@ const updateSchema = z.object({
   isActive: z.boolean().optional(),
 });
 
+function getCategoryScope() {
+  const siteId = getSiteId();
+  return {
+    siteId,
+    isLocal: siteId !== "main",
+  };
+}
+
 export async function GET() {
   const me = await getCurrentUser();
   const isAdmin = me?.role === 'superadmin' || me?.role === 'admin' || me?.isAdmin;
@@ -34,8 +52,15 @@ export async function GET() {
   }
 
   try {
-    const categories = await getAllCategoriesIncludingInactive();
-    return NextResponse.json({ categories });
+    const categories = await getAllCategoriesIncludingInactive(getCategoryScope());
+    return NextResponse.json(
+      { categories },
+      {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate",
+        },
+      }
+    );
   } catch (error) {
     const message = error instanceof Error ? error.message : "ไม่สามารถโหลดหมวดหมู่ได้";
     return NextResponse.json({ message }, { status: 500 });
@@ -60,12 +85,15 @@ export async function POST(request: Request) {
       );
     }
 
+    const scope = getCategoryScope();
     const category = await createCategory(
       parsed.data.name,
       parsed.data.description ?? null,
       parsed.data.imageUrl ?? null,
       parsed.data.displayOrder ?? 0,
-      parsed.data.isActive ?? true
+      parsed.data.isActive ?? true,
+      scope.isLocal ? scope.siteId : null,
+      scope.isLocal
     );
 
     // Send audit webhook
@@ -74,6 +102,8 @@ export async function POST(request: Request) {
       target: `Category: ${category.name}`,
       details: `สร้างหมวดหมู่ "${category.name}" สำเร็จ`,
     });
+
+    revalidateCategoryViews();
 
     return NextResponse.json({ category }, { status: 201 });
   } catch (error) {
@@ -106,7 +136,8 @@ export async function PATCH(request: Request) {
     }
 
     // Get current category for audit
-    const currentCategory = await getCategoryById(id);
+    const scope = getCategoryScope();
+    const currentCategory = await getCategoryById(id, scope);
     if (!currentCategory) {
       return NextResponse.json({ message: "ไม่พบหมวดหมู่" }, { status: 404 });
     }
@@ -125,7 +156,7 @@ export async function PATCH(request: Request) {
     if (parsed.data.displayOrder !== undefined) updatePayload.displayOrder = parsed.data.displayOrder;
     if (parsed.data.isActive !== undefined) updatePayload.isActive = parsed.data.isActive;
 
-    const category = await updateCategory(id, updatePayload);
+    const category = await updateCategory(id, updatePayload, scope);
 
     // Send audit webhook
     const changes: Record<string, { old: string | number | null; new: string | number | null }> = {};
@@ -144,6 +175,8 @@ export async function PATCH(request: Request) {
       target: `Category: ${category.name}`,
       changes: Object.keys(changes).length > 0 ? changes : undefined,
     });
+
+    revalidateCategoryViews();
 
     return NextResponse.json({ category });
   } catch (error) {
@@ -168,12 +201,13 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Get category for audit
-    const category = await getCategoryById(id);
+    const scope = getCategoryScope();
+    const category = await getCategoryById(id, scope);
     if (!category) {
       return NextResponse.json({ message: "ไม่พบหมวดหมู่" }, { status: 404 });
     }
 
-    await deleteCategory(id);
+    await deleteCategory(id, scope);
 
     // Send audit webhook
     await sendAdminAuditWebhook({
@@ -181,6 +215,8 @@ export async function DELETE(request: NextRequest) {
       target: `Category: ${category.name}`,
       details: `ลบหมวดหมู่ "${category.name}" สำเร็จ`,
     });
+
+    revalidateCategoryViews();
 
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { toast } from 'sonner'
 import { Loader2, Plus, Pencil, Trash2 } from 'lucide-react'
+import { ADMIN_IMAGE_ACCEPT, uploadAdminImage } from '@/lib/admin/image-upload-client'
 import {
   Dialog,
   DialogClose,
@@ -37,6 +38,7 @@ export default function CategoriesTable() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [isUploadingImage, setIsUploadingImage] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null)
   const [formData, setFormData] = useState({
     name: '',
@@ -48,7 +50,10 @@ export default function CategoriesTable() {
 
   const fetchCategories = () => {
     startTransition(async () => {
-      const res = await fetch('/api/admin/categories', { credentials: 'include' })
+      const res = await fetch('/api/admin/categories', {
+        credentials: 'include',
+        cache: 'no-store',
+      })
       if (!res.ok) {
         toast.error('โหลดรายการหมวดหมู่ไม่สำเร็จ')
         return
@@ -62,40 +67,22 @@ export default function CategoriesTable() {
     fetchCategories()
   }, [])
 
-  const handleFileChange = (file: File) => {
+  const handleFileChange = async (file: File) => {
     if (!file) return
-    if (!file.type.startsWith('image/')) {
-      toast.error('กรุณาอัปโหลดไฟล์รูปภาพเท่านั้น')
-      return
+
+    setIsUploadingImage(true)
+    try {
+      const imageUrl = await uploadAdminImage(file)
+      setFormData((prev) => ({ ...prev, imageUrl }))
+      toast.success('อัปโหลดรูปภาพสำเร็จ')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'อัปโหลดรูปภาพไม่สำเร็จ')
+    } finally {
+      setIsUploadingImage(false)
     }
-
-    const reader = new FileReader()
-    reader.onload = (event) => {
-      const img = new window.Image()
-      img.onload = () => {
-        const canvas = document.createElement('canvas')
-        const MAX_WIDTH = 400
-        const scaleFactor = MAX_WIDTH / img.width
-
-        if (img.width > MAX_WIDTH) {
-          canvas.width = MAX_WIDTH
-          canvas.height = img.height * scaleFactor
-        } else {
-          canvas.width = img.width
-          canvas.height = img.height
-        }
-
-        const ctx = canvas.getContext('2d')
-        ctx?.drawImage(img, 0, 0, canvas.width, canvas.height)
-
-        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.85)
-        setFormData((prev) => ({ ...prev, imageUrl: compressedBase64 }))
-        toast.success('อัปโหลดและบีบอัดรูปภาพสำเร็จ')
-      }
-      img.src = event.target?.result as string
-    }
-    reader.readAsDataURL(file)
   }
+
+  const isBusy = isPending || isUploadingImage
 
   const handleCreate = () => {
     setFormData({
@@ -293,7 +280,7 @@ export default function CategoriesTable() {
                         variant="outline"
                         className="border-[var(--theme-color)]/40 text-[var(--theme-color)] hover:bg-[var(--theme-color)]/10"
                         onClick={() => handleEdit(category)}
-                        disabled={isPending}
+                        disabled={isBusy}
                       >
                         <Pencil className="size-4" />
                       </Button>
@@ -302,7 +289,7 @@ export default function CategoriesTable() {
                         variant="outline"
                         className="border-red-300 text-red-600 hover:bg-red-50"
                         onClick={() => handleDelete(category)}
-                        disabled={isPending}
+                        disabled={isBusy}
                       >
                         <Trash2 className="size-4" />
                       </Button>
@@ -363,13 +350,13 @@ export default function CategoriesTable() {
                   <input
                     id="create-file-upload"
                     type="file"
-                    accept="image/*"
+                    accept={ADMIN_IMAGE_ACCEPT}
                     onChange={(e) => {
                       const file = e.target.files?.[0]
                       if (file) handleFileChange(file)
                     }}
                     className="hidden"
-                    disabled={isPending}
+                    disabled={isBusy}
                   />
                   {formData.imageUrl && (
                     <Button
@@ -377,7 +364,7 @@ export default function CategoriesTable() {
                       variant="ghost"
                       onClick={() => setFormData({ ...formData, imageUrl: '' })}
                       className="h-9 px-3 text-red-500 hover:text-red-700 hover:bg-red-50 text-xs rounded-lg"
-                      disabled={isPending}
+                      disabled={isBusy}
                     >
                       ลบรูปภาพ
                     </Button>
@@ -412,16 +399,16 @@ export default function CategoriesTable() {
           </div>
           <DialogFooter>
             <DialogClose asChild>
-              <Button variant="outline" disabled={isPending}>
+              <Button variant="outline" disabled={isBusy}>
                 ยกเลิก
               </Button>
             </DialogClose>
             <Button
               onClick={handleCreateSubmit}
-              disabled={isPending}
+              disabled={isBusy}
               className="bg-[var(--theme-color)] text-white hover:bg-[var(--theme-color)]"
             >
-              {isPending ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
+              {isBusy ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
               สร้าง
             </Button>
           </DialogFooter>
@@ -476,13 +463,13 @@ export default function CategoriesTable() {
                   <input
                     id="edit-file-upload"
                     type="file"
-                    accept="image/*"
+                    accept={ADMIN_IMAGE_ACCEPT}
                     onChange={(e) => {
                       const file = e.target.files?.[0]
                       if (file) handleFileChange(file)
                     }}
                     className="hidden"
-                    disabled={isPending}
+                    disabled={isBusy}
                   />
                   {formData.imageUrl && (
                     <Button
@@ -490,7 +477,7 @@ export default function CategoriesTable() {
                       variant="ghost"
                       onClick={() => setFormData({ ...formData, imageUrl: '' })}
                       className="h-9 px-3 text-red-500 hover:text-red-700 hover:bg-red-50 text-xs rounded-lg"
-                      disabled={isPending}
+                      disabled={isBusy}
                     >
                       ลบรูปภาพ
                     </Button>
@@ -525,16 +512,16 @@ export default function CategoriesTable() {
           </div>
           <DialogFooter>
             <DialogClose asChild>
-              <Button variant="outline" disabled={isPending}>
+              <Button variant="outline" disabled={isBusy}>
                 ยกเลิก
               </Button>
             </DialogClose>
             <Button
               onClick={handleEditSubmit}
-              disabled={isPending}
+              disabled={isBusy}
               className="bg-[var(--theme-color)] text-white hover:bg-[var(--theme-color)]"
             >
-              {isPending ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
+              {isBusy ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
               บันทึก
             </Button>
           </DialogFooter>
@@ -553,16 +540,16 @@ export default function CategoriesTable() {
           </DialogHeader>
           <DialogFooter>
             <DialogClose asChild>
-              <Button variant="outline" disabled={isPending}>
+              <Button variant="outline" disabled={isBusy}>
                 ยกเลิก
               </Button>
             </DialogClose>
             <Button
               onClick={handleDeleteConfirm}
-              disabled={isPending}
+              disabled={isBusy}
               className="bg-red-600 text-white hover:bg-red-700"
             >
-              {isPending ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
+              {isBusy ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
               ลบ
             </Button>
           </DialogFooter>

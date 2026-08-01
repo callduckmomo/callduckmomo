@@ -2,6 +2,25 @@ import pool from "@/lib/mysql";
 import type { Category } from "@/lib/products/types";
 import { randomUUID } from "crypto";
 
+export type CategoryScope = {
+  siteId: string;
+  isLocal: boolean;
+};
+
+function scopedCategoryWhere(scope: CategoryScope): { clause: string; params: string[] } {
+  if (scope.isLocal) {
+    return {
+      clause: "is_local = 1 AND site_id = ?",
+      params: [scope.siteId],
+    };
+  }
+
+  return {
+    clause: "COALESCE(is_local, 0) = 0 AND (site_id IS NULL OR site_id = '' OR site_id = 'main')",
+    params: [],
+  };
+}
+
 function toCategory(row: any): Category {
   return {
     id: row.id,
@@ -15,11 +34,15 @@ function toCategory(row: any): Category {
   };
 }
 
-export async function getAllCategories(): Promise<Category[]> {
+export async function getAllCategories(scope?: CategoryScope): Promise<Category[]> {
   try {
-    const [rows] = await pool.execute(
-      "SELECT * FROM categories WHERE is_active = 1 ORDER BY display_order ASC, name ASC"
-    );
+    const scopeSql = scope ? scopedCategoryWhere(scope) : null;
+    const query = scopeSql
+      ? `SELECT * FROM categories WHERE is_active = 1 AND ${scopeSql.clause} ORDER BY display_order ASC, name ASC`
+      : "SELECT * FROM categories WHERE is_active = 1 ORDER BY display_order ASC, name ASC";
+    const [rows] = scopeSql
+      ? await pool.execute(query, scopeSql.params)
+      : await pool.execute(query);
     return (rows as any[]).map(toCategory);
   } catch (error) {
     console.error("Error in getAllCategories:", error);
@@ -27,11 +50,15 @@ export async function getAllCategories(): Promise<Category[]> {
   }
 }
 
-export async function getAllCategoriesIncludingInactive(): Promise<Category[]> {
+export async function getAllCategoriesIncludingInactive(scope?: CategoryScope): Promise<Category[]> {
   try {
-    const [rows] = await pool.execute(
-      "SELECT * FROM categories ORDER BY display_order ASC, name ASC"
-    );
+    const scopeSql = scope ? scopedCategoryWhere(scope) : null;
+    const query = scopeSql
+      ? `SELECT * FROM categories WHERE ${scopeSql.clause} ORDER BY display_order ASC, name ASC`
+      : "SELECT * FROM categories ORDER BY display_order ASC, name ASC";
+    const [rows] = scopeSql
+      ? await pool.execute(query, scopeSql.params)
+      : await pool.execute(query);
     return (rows as any[]).map(toCategory);
   } catch (error) {
     console.error("Error in getAllCategoriesIncludingInactive:", error);
@@ -39,9 +66,14 @@ export async function getAllCategoriesIncludingInactive(): Promise<Category[]> {
   }
 }
 
-export async function getCategoryById(id: string): Promise<Category | null> {
+export async function getCategoryById(id: string, scope?: CategoryScope): Promise<Category | null> {
   try {
-    const [rows] = await pool.execute("SELECT * FROM categories WHERE id = ?", [id]);
+    const scopeSql = scope ? scopedCategoryWhere(scope) : null;
+    const query = scopeSql
+      ? `SELECT * FROM categories WHERE id = ? AND ${scopeSql.clause}`
+      : "SELECT * FROM categories WHERE id = ?";
+    const params = scopeSql ? [id, ...scopeSql.params] : [id];
+    const [rows] = await pool.execute(query, params);
     const list = rows as any[];
     if (list.length === 0) return null;
     return toCategory(list[0]);
@@ -93,21 +125,21 @@ export async function updateCategory(
     imageUrl?: string | null;
     displayOrder?: number;
     isActive?: boolean;
-  }
+  },
+  scope?: CategoryScope
 ): Promise<Category> {
   try {
-    const [existingRows] = await pool.execute("SELECT * FROM categories WHERE id = ?", [id]);
-    const list = existingRows as any[];
-    if (list.length === 0) {
+    const currentCategory = await getCategoryById(id, scope);
+    if (!currentCategory) {
       throw new Error("ไม่พบหมวดหมู่ที่ต้องการแก้ไข");
     }
 
-    const current = list[0];
+    const current = currentCategory;
     const name = updates.name !== undefined ? updates.name : current.name;
     const description = updates.description !== undefined ? updates.description : current.description;
-    const imageUrl = updates.imageUrl !== undefined ? updates.imageUrl : current.image_url;
-    const displayOrder = updates.displayOrder !== undefined ? updates.displayOrder : current.display_order;
-    const isActive = updates.isActive !== undefined ? updates.isActive : current.is_active;
+    const imageUrl = updates.imageUrl !== undefined ? updates.imageUrl : current.imageUrl;
+    const displayOrder = updates.displayOrder !== undefined ? updates.displayOrder : current.displayOrder;
+    const isActive = updates.isActive !== undefined ? updates.isActive : current.isActive;
     const now = new Date();
 
     await pool.execute(
@@ -123,8 +155,8 @@ export async function updateCategory(
       description,
       imageUrl,
       displayOrder,
-      isActive: isActive === 1 || isActive === true,
-      createdAt: new Date(current.created_at).toISOString(),
+      isActive: Boolean(isActive),
+      createdAt: current.createdAt,
       updatedAt: now.toISOString(),
     };
   } catch (error: any) {
@@ -132,8 +164,12 @@ export async function updateCategory(
   }
 }
 
-export async function deleteCategory(id: string): Promise<void> {
+export async function deleteCategory(id: string, scope?: CategoryScope): Promise<void> {
   try {
+    if (scope && !(await getCategoryById(id, scope))) {
+      throw new Error("ไม่พบหมวดหมู่ที่ต้องการลบ");
+    }
+
     // ตรวจสอบว่ามีสินค้าใช้หมวดหมู่นี้อยู่หรือไม่
     const [productRows] = await pool.execute(
       "SELECT 1 FROM products WHERE category_id = ? LIMIT 1",
