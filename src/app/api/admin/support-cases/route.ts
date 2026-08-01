@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth/server";
-import { getAllSupportCases, getAllSupportCasesPaginated, updateSupportCase } from "@/lib/support/repository";
+import {
+  findSupportCaseByCode,
+  findSupportCaseById,
+  getAllSupportCases,
+  getAllSupportCasesPaginated,
+  updateSupportCase,
+} from "@/lib/support/repository";
+import { getSiteId } from "@/lib/site";
 import { z } from "zod";
 
 const updateSchema = z.object({
@@ -8,6 +15,11 @@ const updateSchema = z.object({
   adminNote: z.string().nullable().optional(),
   adminResponse: z.string().nullable().optional(),
 });
+
+function getAdminCaseSiteId(): string | undefined {
+  const siteId = getSiteId();
+  return siteId === "main" ? undefined : siteId;
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -18,8 +30,7 @@ export async function GET(request: NextRequest) {
     
     // If requesting single case by ID, return with attachments
     if (id) {
-      const { findSupportCaseById } = await import("@/lib/support/repository");
-      let caseData = await findSupportCaseById(id);
+      let caseData = await findSupportCaseById(id, getAdminCaseSiteId());
       if (!caseData) {
         return NextResponse.json({ ok: false, message: "ไม่พบเคส" }, { status: 404 });
       }
@@ -74,6 +85,8 @@ export async function GET(request: NextRequest) {
     const pagination = searchParams.get("pagination");
     const page = searchParams.get("page");
     const limit = searchParams.get("limit");
+    const siteId = getSiteId();
+    const isChildSite = siteId !== "main";
 
     // Use pagination if requested
     if (pagination === "true") {
@@ -84,6 +97,35 @@ export async function GET(request: NextRequest) {
       const masterUrl = await getSettingValue("MASTER_DOMAIN_URL");
       const masterApiKey = await getSettingValue("MASTER_API_KEY");
       const isCentralized = !!(masterUrl && masterApiKey);
+
+      // A child admin must read from its own local mirror. The Master API is
+      // shared by all shops and therefore returns cases from every shop.
+      if (isChildSite) {
+        const result = await getAllSupportCasesPaginated(
+          {
+            status: status || undefined,
+            productTypeId: productTypeId || undefined,
+            caseType: caseType || undefined,
+            searchEmail: searchEmail || undefined,
+            searchCaseCode: searchCaseCode || undefined,
+            siteId,
+          },
+          {
+            page: pageNum,
+            limit: limitNum,
+            includeAttachments: false,
+          }
+        );
+
+        return NextResponse.json({
+          ok: true,
+          cases: result.cases,
+          total: result.total,
+          page: result.page,
+          totalPages: result.totalPages,
+          isCentralized,
+        });
+      }
 
       if (isCentralized) {
         try {
@@ -129,6 +171,7 @@ export async function GET(request: NextRequest) {
           caseType: caseType || undefined,
           searchEmail: searchEmail || undefined,
           searchCaseCode: searchCaseCode || undefined,
+          siteId: isChildSite ? siteId : undefined,
         },
         {
           page: pageNum,
@@ -151,6 +194,21 @@ export async function GET(request: NextRequest) {
     const masterUrl = await getSettingValue("MASTER_DOMAIN_URL");
     const masterApiKey = await getSettingValue("MASTER_API_KEY");
     const isCentralized = !!(masterUrl && masterApiKey);
+
+    // Keep the non-paginated endpoint consistent with the paginated view:
+    // child shops never receive the shared Master API case list.
+    if (isChildSite) {
+      const cases = await getAllSupportCases({
+        status: status || undefined,
+        productTypeId: productTypeId || undefined,
+        caseType: caseType || undefined,
+        searchEmail: searchEmail || undefined,
+        searchCaseCode: searchCaseCode || undefined,
+        siteId,
+      });
+
+      return NextResponse.json({ ok: true, cases, isCentralized });
+    }
 
     if (isCentralized) {
       try {
@@ -191,6 +249,7 @@ export async function GET(request: NextRequest) {
       caseType: caseType || undefined,
       searchEmail: searchEmail || undefined,
       searchCaseCode: searchCaseCode || undefined,
+      siteId: isChildSite ? siteId : undefined,
     });
 
     return NextResponse.json({ ok: true, cases, isCentralized });
@@ -216,6 +275,20 @@ export async function PATCH(request: NextRequest) {
 
     const validated = updateSchema.parse(updates);
 
+    const adminCaseSiteId = getAdminCaseSiteId();
+    const ownedCase = id
+      ? await findSupportCaseById(id, adminCaseSiteId)
+      : await findSupportCaseByCode(caseCode, adminCaseSiteId);
+
+    if (!ownedCase) {
+      return NextResponse.json(
+        { ok: false, message: "ไม่พบเคส หรือเคสนี้ไม่ใช่ของร้านตัวเอง" },
+        { status: 404 }
+      );
+    }
+
+    const localCaseId = ownedCase.id;
+
     // Try to sync update to Master API first if configured
     let updatedCase = null;
     let isMasterUpdated = false;
@@ -230,7 +303,7 @@ export async function PATCH(request: NextRequest) {
         
         // We need caseCode to sync with Master API. If we don't have it in body, we might need to look it up, 
         // but frontend should send it.
-        const codeToSync = caseCode || id; 
+        const codeToSync = ownedCase.caseCode;
 
         const res = await fetch(`${cleanUrl}/api/v1/support-cases/${codeToSync}`, {
           method: "PATCH",
@@ -259,9 +332,9 @@ export async function PATCH(request: NextRequest) {
 
     // If we are in Centralized mode (Master API updated successfully), we skip local DB update
     // because the local DB might not have this ID (it uses Master DB's ID).
-    if (!isMasterUpdated && id) {
+    if (!isMasterUpdated) {
       // Fallback to local DB if not centralized
-      updatedCase = await updateSupportCase(id, validated);
+      updatedCase = await updateSupportCase(localCaseId, validated);
     }
 
     if (!updatedCase) {

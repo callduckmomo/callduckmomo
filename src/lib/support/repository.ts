@@ -183,12 +183,20 @@ export async function createSupportCase(
   }
 }
 
-export async function findSupportCaseByCode(caseCode: string): Promise<SupportCase | null> {
+export async function findSupportCaseByCode(
+  caseCode: string,
+  siteId?: string
+): Promise<SupportCase | null> {
   try {
-    const [caseRows] = await pool.execute(
-      "SELECT * FROM support_cases WHERE case_code = ? LIMIT 1",
-      [caseCode]
-    );
+    const [caseRows] = siteId
+      ? await pool.execute(
+          "SELECT * FROM support_cases WHERE case_code = ? AND site_id = ? LIMIT 1",
+          [caseCode, siteId]
+        )
+      : await pool.execute(
+          "SELECT * FROM support_cases WHERE case_code = ? LIMIT 1",
+          [caseCode]
+        );
     const caseList = caseRows as any[];
     if (caseList.length === 0) return null;
     const caseData = caseList[0];
@@ -206,12 +214,20 @@ export async function findSupportCaseByCode(caseCode: string): Promise<SupportCa
   }
 }
 
-export async function findSupportCaseById(id: string): Promise<SupportCase | null> {
+export async function findSupportCaseById(
+  id: string,
+  siteId?: string
+): Promise<SupportCase | null> {
   try {
-    const [caseRows] = await pool.execute(
-      "SELECT * FROM support_cases WHERE id = ? LIMIT 1",
-      [id]
-    );
+    const [caseRows] = siteId
+      ? await pool.execute(
+          "SELECT * FROM support_cases WHERE id = ? AND site_id = ? LIMIT 1",
+          [id, siteId]
+        )
+      : await pool.execute(
+          "SELECT * FROM support_cases WHERE id = ? LIMIT 1",
+          [id]
+        );
     const caseList = caseRows as any[];
     if (caseList.length === 0) return null;
     const caseData = caseList[0];

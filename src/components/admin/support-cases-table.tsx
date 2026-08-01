@@ -44,6 +44,11 @@ export default function SupportCasesTable() {
   const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [isCentralized, setIsCentralized] = useState(false);
+  const isChildSite = Boolean(
+    process.env.NEXT_PUBLIC_SITE_ID && process.env.NEXT_PUBLIC_SITE_ID !== "main"
+  );
+  const getCaseShopLabel = (caseData: SupportCase) =>
+    caseData.shopName || (isChildSite ? "ร้านของฉัน" : "Appbymari");
 
   // Filters
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -87,7 +92,9 @@ export default function SupportCasesTable() {
       if (searchEmail) params.append("searchEmail", searchEmail);
       if (searchCaseCode) params.append("searchCaseCode", searchCaseCode);
 
-      const response = await fetch(`/api/admin/support-cases?${params.toString()}`);
+      const response = await fetch(`/api/admin/support-cases?${params.toString()}`, {
+        cache: "no-store",
+      });
       const data = (await response.json()) as {
         ok: boolean;
         cases: SupportCase[];
@@ -350,7 +357,7 @@ export default function SupportCasesTable() {
                             <Badge 
                               variant="outline" 
                               className={(() => {
-                                const name = caseData.shopName || 'Appbymari';
+                                const name = getCaseShopLabel(caseData);
                                 // Special case for main site
                                 if (name === 'Appbymari') return 'border-blue-500 text-blue-700';
                                 
@@ -374,7 +381,7 @@ export default function SupportCasesTable() {
                                 return SHOP_COLORS[index];
                               })()}
                             >
-                              {caseData.shopName || 'Appbymari'}
+                              {getCaseShopLabel(caseData)}
                             </Badge>
                           </td>
                           <td className="px-2 py-2 text-sm text-[#0B0B0B]">
@@ -466,7 +473,7 @@ export default function SupportCasesTable() {
                             <Badge 
                               variant="outline" 
                               className={(() => {
-                                const name = caseData.shopName || 'Appbymari';
+                                const name = getCaseShopLabel(caseData);
                                 if (name === 'Appbymari') return 'border-blue-500 text-blue-700 text-[10px] px-1.5 py-0';
                                 const SHOP_COLORS = [
                                   'border-emerald-500 text-emerald-700',
@@ -486,7 +493,7 @@ export default function SupportCasesTable() {
                                 return SHOP_COLORS[Math.abs(hash) % SHOP_COLORS.length] + ' text-[10px] px-1.5 py-0';
                               })()}
                             >
-                              {caseData.shopName || 'Appbymari'}
+                              {getCaseShopLabel(caseData)}
                             </Badge>
                             <Badge
                               variant="outline"
