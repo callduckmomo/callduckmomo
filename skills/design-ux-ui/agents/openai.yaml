@@ -1,0 +1,4 @@
+interface:
+  display_name: "🎨 UI Master AI"
+  short_description: "Design premium, accessible UX and UI systems"
+  default_prompt: "Use $design-ux-ui to define the user experience and interface specification."

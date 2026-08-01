@@ -1,0 +1,4 @@
+interface:
+  display_name: "🗄️ Database AI"
+  short_description: "Design reliable schemas, migrations, and data flows"
+  default_prompt: "Use $engineer-data to design and verify the data layer for this task."

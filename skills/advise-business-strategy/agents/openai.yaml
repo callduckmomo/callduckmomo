@@ -1,0 +1,4 @@
+interface:
+  display_name: "👑 Business Council AI"
+  short_description: "Design evidence-based product and business strategy"
+  default_prompt: "Use $advise-business-strategy to evaluate this product, pricing, monetization, or business decision."

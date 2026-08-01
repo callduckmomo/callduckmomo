@@ -1,0 +1,4 @@
+interface:
+  display_name: "🚀 DevOps AI"
+  short_description: "Operate auditable, observable, recoverable delivery"
+  default_prompt: "Use $operate-devops-sre to design and verify this delivery or operations workflow."

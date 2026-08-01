@@ -1,0 +1,4 @@
+interface:
+  display_name: "🤖 AI Integration AI"
+  short_description: "Engineer evaluated agents, RAG, MCP, and LLM systems"
+  default_prompt: "Use $engineer-ai-systems to design and verify this AI system."

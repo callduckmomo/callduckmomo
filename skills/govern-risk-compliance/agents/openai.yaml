@@ -1,0 +1,4 @@
+interface:
+  display_name: "⚖️ Security & Governance Council AI"
+  short_description: "Assess privacy, compliance, legal, and risk controls"
+  default_prompt: "Use $govern-risk-compliance to assess and govern the privacy, compliance, and legal-risk aspects."

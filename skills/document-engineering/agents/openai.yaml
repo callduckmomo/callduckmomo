@@ -1,0 +1,4 @@
+interface:
+  display_name: "📚 Documentation AI"
+  short_description: "Create evidence-backed engineering documentation"
+  default_prompt: "Use $document-engineering to produce maintainable engineering documentation."

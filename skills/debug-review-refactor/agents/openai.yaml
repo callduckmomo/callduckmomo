@@ -1,0 +1,4 @@
+interface:
+  display_name: "👀 Reviewer AI"
+  short_description: "Diagnose, review, debug, and refactor code safely"
+  default_prompt: "Use $debug-review-refactor to diagnose, review, or refactor this code safely."

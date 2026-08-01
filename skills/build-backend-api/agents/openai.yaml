@@ -1,0 +1,4 @@
+interface:
+  display_name: "⚙️ Backend AI"
+  short_description: "Build secure, scalable backend services and APIs"
+  default_prompt: "Use $build-backend-api to implement and verify this backend or API task."

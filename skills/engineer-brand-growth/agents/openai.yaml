@@ -1,0 +1,4 @@
+interface:
+  display_name: "📣 Marketing Council AI"
+  short_description: "Build ethical brand, SEO, and growth systems"
+  default_prompt: "Use $engineer-brand-growth to design and evaluate this brand, SEO, funnel, or growth initiative."

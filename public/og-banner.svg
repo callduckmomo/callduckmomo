@@ -1,0 +1,22 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">appmymari Premium App Rentals</title>
+  <desc id="desc">Landing page preview image for appmymari showing gradient background and key offerings.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#E50914" />
+      <stop offset="1" stop-color="#9B0000" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" rx="48" fill="url(#bg)" />
+  <g fill="white">
+    <text x="120" y="210" font-family="'Noto Sans Thai', 'Prompt', sans-serif" font-size="72" font-weight="700" letter-spacing="0.01em">appmymari.shop</text>
+    <text x="120" y="300" font-family="'Noto Sans Thai', 'Prompt', sans-serif" font-size="48" font-weight="500" opacity="0.92">แชร์แอปพรีเมี่ยมราคาสบาย</text>
+    <text x="120" y="360" font-family="'Noto Sans Thai', 'Prompt', sans-serif" font-size="30" font-weight="400" opacity="0.76">Netflix · Spotify · Canva · ChatGPT Plus · อีกมากมาย</text>
+  </g>
+  <g opacity="0.16">
+    <circle cx="980" cy="140" r="96" stroke="#ffffff" stroke-width="8" />
+    <circle cx="1040" cy="250" r="72" stroke="#ffffff" stroke-width="6" />
+    <circle cx="940" cy="320" r="52" stroke="#ffffff" stroke-width="5" />
+  </g>
+</svg>
+

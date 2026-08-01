@@ -1,0 +1,4 @@
+interface:
+  display_name: "⚖️ Debate & Decision Engine"
+  short_description: "Resolve complex choices through evidence-led debate"
+  default_prompt: "Use $run-debate-decisions to compare competing positions and produce a defensible decision."

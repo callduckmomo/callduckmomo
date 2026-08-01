@@ -1,0 +1,4 @@
+interface:
+  display_name: "🔭 Product Discovery AI"
+  short_description: "Turn product goals into testable delivery contracts"
+  default_prompt: "Use $discover-product to convert this idea into requirements and acceptance criteria."

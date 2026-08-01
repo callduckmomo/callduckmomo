@@ -1,0 +1,4 @@
+interface:
+  display_name: "🧪 QA & Testing AI"
+  short_description: "Verify software behavior with risk-based evidence"
+  default_prompt: "Use $verify-software to independently verify this software change."

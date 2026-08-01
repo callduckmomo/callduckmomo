@@ -1,0 +1,4 @@
+interface:
+  display_name: "🧠 Architect AI"
+  short_description: "Design scalable, maintainable software architecture"
+  default_prompt: "Use $design-architecture to design and evaluate the architecture for this system."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "🧑‍🏫 Human Council AI"
+  short_description: "Teach, communicate, negotiate, and lead responsibly"
+  default_prompt: "Use $teach-communicate-lead to teach, communicate, negotiate, coach, or lead this situation."

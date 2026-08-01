@@ -1,0 +1,4 @@
+interface:
+  display_name: "🧩 Knowledge & Memory Engine"
+  short_description: "Maintain sourced knowledge, project memory, and learning"
+  default_prompt: "Use $manage-knowledge-memory to curate current knowledge, project memory, and a controlled feedback loop."

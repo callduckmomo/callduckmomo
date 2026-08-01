@@ -1,0 +1,4 @@
+interface:
+  display_name: "🔒 Security AI"
+  short_description: "Threat-model and secure software and AI systems"
+  default_prompt: "Use $secure-applications to review and harden this application."

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <rect width="200" height="200" rx="40" fill="#1A1A2E"/>
+  <text x="100" y="90" font-family="Arial Black,Arial" font-weight="900" font-size="36" fill="#00D4FF" text-anchor="middle">MONO</text>
+  <text x="100" y="140" font-family="Arial Black,Arial" font-weight="900" font-size="36" fill="white" text-anchor="middle">MAX</text>
+</svg>

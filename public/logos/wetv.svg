@@ -1,0 +1,6 @@
+# WeTV (We Tv) logo SVG
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <rect width="200" height="200" rx="40" fill="#FF6633"/>
+  <text x="100" y="95" font-family="Arial Black,Arial" font-weight="900" font-size="44" fill="white" text-anchor="middle">We</text>
+  <text x="100" y="145" font-family="Arial Black,Arial" font-weight="900" font-size="44" fill="white" text-anchor="middle">TV</text>
+</svg>

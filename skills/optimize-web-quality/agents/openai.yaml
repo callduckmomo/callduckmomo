@@ -1,0 +1,4 @@
+interface:
+  display_name: "⚡ Performance AI"
+  short_description: "Optimize Core Web Vitals, accessibility, and SEO"
+  default_prompt: "Use $optimize-web-quality to audit and improve this web experience."

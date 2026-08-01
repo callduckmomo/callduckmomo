@@ -1,0 +1,4 @@
+interface:
+  display_name: "⚛️ Frontend AI"
+  short_description: "Build accessible, production-ready web interfaces"
+  default_prompt: "Use $build-frontend to implement and verify this frontend task."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "👑 Quantum Supreme Web Architect"
+  short_description: "Orchestrate expert roles and evidence-based delivery"
+  default_prompt: "Use $mew-orchestrate to plan, delegate, verify, and deliver this engineering task."

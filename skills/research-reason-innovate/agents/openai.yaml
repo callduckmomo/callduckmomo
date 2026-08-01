@@ -1,0 +1,4 @@
+interface:
+  display_name: "🔬 Science & Innovation Council AI"
+  short_description: "Research rigorously and test innovative solutions"
+  default_prompt: "Use $research-reason-innovate to research, reason about, and test this innovation opportunity."
