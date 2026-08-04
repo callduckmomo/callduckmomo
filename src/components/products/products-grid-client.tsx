@@ -120,7 +120,7 @@ export default function ProductsGridClient({
         setRealtimeRefreshVersion((version) => version + 1)
       }
     }
-    const interval = window.setInterval(refresh, 3_000)
+    const interval = window.setInterval(refresh, 30_000)
     window.addEventListener('focus', refresh)
     document.addEventListener('visibilitychange', refresh)
 
