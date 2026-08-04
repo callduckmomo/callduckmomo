@@ -160,11 +160,9 @@ export async function createUser(params: {
   }
 }
 
-export const countUsers = unstable_cache(
-  _countUsers,
-  ["count-users"],
-  { tags: ["users"], revalidate: 604800 }
-);
+export async function countUsers(): Promise<number> {
+  return _countUsers();
+}
 
 async function _countUsers(): Promise<number> {
   try {

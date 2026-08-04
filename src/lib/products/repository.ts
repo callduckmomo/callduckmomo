@@ -70,13 +70,9 @@ function toProduct(row: any): Product {
 }
 
 
-export const getAllCategoriesCached = unstable_cache(
-  async (onlyPublishedWithStock: boolean = false) => {
-    return await getAllCategories(onlyPublishedWithStock);
-  },
-  ["categories-list-master-contract-v2"],
-  { tags: ["categories", "products"], revalidate: 604800 }
-);
+export async function getAllCategoriesCached(onlyPublishedWithStock: boolean = false) {
+  return getAllCategories(onlyPublishedWithStock);
+}
 
 export async function upsertProductsFromExternal(
   items: ExternalProduct[],
@@ -458,11 +454,14 @@ export async function fetchPublishedProducts(): Promise<Product[]> {
   }
 }
 
-export const fetchPublishedProductsPaginated = unstable_cache(
-  _fetchPublishedProductsPaginated,
-  ["published-products-paginated-master-contract-v2"],
-  { tags: ["products"], revalidate: 604800 }
-);
+export async function fetchPublishedProductsPaginated(
+  limit: number = 12,
+  offset: number = 0,
+  category?: string | null,
+  searchTerm?: string | null
+) {
+  return _fetchPublishedProductsPaginated(limit, offset, category, searchTerm);
+}
 
 /** Uncached storefront read used by realtime reconciliation and polling fallback. */
 export async function fetchPublishedProductsPaginatedLive(
@@ -676,11 +675,9 @@ export async function fetchCheapestProductsByCategory(): Promise<Product[]> {
   }
 }
 
-export const fetchRecommendedProducts = unstable_cache(
-  _fetchRecommendedProducts,
-  ["recommended-products"],
-  { tags: ["products"], revalidate: 604800 }
-);
+export async function fetchRecommendedProducts(): Promise<Product[]> {
+  return _fetchRecommendedProducts();
+}
 
 async function _fetchRecommendedProducts(): Promise<Product[]> {
   try {
@@ -1068,11 +1065,9 @@ export async function deleteProduct(typeId: string): Promise<void> {
   }
 }
 
-export const countTotalStockAndProducts = unstable_cache(
-  _countTotalStockAndProducts,
-  ["total-stock-products"],
-  { tags: ["products"], revalidate: 604800 }
-);
+export async function countTotalStockAndProducts(): Promise<{ totalStock: number; productCount: number }> {
+  return _countTotalStockAndProducts();
+}
 
 async function _countTotalStockAndProducts(): Promise<{ totalStock: number; productCount: number }> {
   try {

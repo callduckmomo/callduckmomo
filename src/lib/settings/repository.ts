@@ -19,11 +19,9 @@ function toSetting(row: any): Setting {
   };
 }
 
-export const getAllSettings = unstable_cache(
-  _getAllSettings,
-  ["all-settings"],
-  { tags: ["settings"], revalidate: 604800 }
-);
+export async function getAllSettings(): Promise<Setting[]> {
+  return _getAllSettings();
+}
 
 async function _getAllSettings(): Promise<Setting[]> {
   try {
@@ -40,11 +38,9 @@ async function _getAllSettings(): Promise<Setting[]> {
   }
 }
 
-export const getSetting = unstable_cache(
-  _getSetting,
-  ["single-setting"],
-  { tags: ["settings"], revalidate: 604800 }
-);
+export async function getSetting(key: string): Promise<Setting | null> {
+  return _getSetting(key);
+}
 
 async function _getSetting(key: string): Promise<Setting | null> {
   try {

@@ -186,11 +186,9 @@ export async function recordExternalOrder({
   }
 }
 
-export const listRecentOrders = unstable_cache(
-  _listRecentOrders,
-  ["recent-orders"],
-  { tags: ["orders"], revalidate: 604800 }
-);
+export async function listRecentOrders(limit = 20): Promise<Order[]> {
+  return _listRecentOrders(limit);
+}
 
 async function _listRecentOrders(limit = 20): Promise<Order[]> {
   try {
@@ -221,11 +219,9 @@ export async function listOrdersByUser(userId: string, limit = 20): Promise<Orde
   }
 }
 
-export const countOrders = unstable_cache(
-  _countOrders,
-  ["count-orders"],
-  { tags: ["orders"], revalidate: 604800 }
-);
+export async function countOrders(): Promise<number> {
+  return _countOrders();
+}
 
 async function _countOrders(): Promise<number> {
   try {
