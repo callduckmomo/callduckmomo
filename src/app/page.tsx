@@ -52,7 +52,8 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-// 🌟 Next.js will now cache the page natively and revalidate on-demand via tags.
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 const GRID_PAGE_SIZE = 12;
 
