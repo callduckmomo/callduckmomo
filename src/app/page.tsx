@@ -42,6 +42,7 @@ import { BreadcrumbJsonLd } from "@/components/seo/json-ld";
 
 import { getSiteId } from "@/lib/site";
 import { getSiteConfig } from "@/lib/site-config";
+import { mapPublicMediaSettings } from "@/lib/settings/public-media";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { siteName } = getSiteConfig();
@@ -135,28 +136,30 @@ async function ProductsSection() {
     ]),
   ]);
 
+  const publicHomeSettings = mapPublicMediaSettings(homeSettings);
+
   const { totalStock, productCount } = stockStats;
-  const youtubeUrl = homeSettings["home_youtube_url"];
-  const youtubeEnabled = homeSettings["home_youtube_enabled"] !== "false";
-  const youtubeTitle = homeSettings["home_youtube_title"] || "";
-  const moviesEnabled = homeSettings["home_movies_enabled"] === "true";
-  const featuredEnabled = homeSettings["home_featured_enabled"] !== "false";
-  const shortcutsEnabled = homeSettings["home_shortcuts_enabled"] === "true";
+  const youtubeUrl = publicHomeSettings["home_youtube_url"];
+  const youtubeEnabled = publicHomeSettings["home_youtube_enabled"] !== "false";
+  const youtubeTitle = publicHomeSettings["home_youtube_title"] || "";
+  const moviesEnabled = publicHomeSettings["home_movies_enabled"] === "true";
+  const featuredEnabled = publicHomeSettings["home_featured_enabled"] !== "false";
+  const shortcutsEnabled = publicHomeSettings["home_shortcuts_enabled"] === "true";
 
   const moviePosters = [
-    homeSettings["home_movie_poster_1"],
-    homeSettings["home_movie_poster_2"],
-    homeSettings["home_movie_poster_3"],
-    homeSettings["home_movie_poster_4"],
-    homeSettings["home_movie_poster_5"],
-    homeSettings["home_movie_poster_6"],
+    publicHomeSettings["home_movie_poster_1"],
+    publicHomeSettings["home_movie_poster_2"],
+    publicHomeSettings["home_movie_poster_3"],
+    publicHomeSettings["home_movie_poster_4"],
+    publicHomeSettings["home_movie_poster_5"],
+    publicHomeSettings["home_movie_poster_6"],
   ].filter((p): p is string => typeof p === "string" && p !== "");
 
   const shortcutCards = [
-    { image: homeSettings["home_shortcut_image_1"], link: homeSettings["home_shortcut_link_1"] },
-    { image: homeSettings["home_shortcut_image_2"], link: homeSettings["home_shortcut_link_2"] },
-    { image: homeSettings["home_shortcut_image_3"], link: homeSettings["home_shortcut_link_3"] },
-    { image: homeSettings["home_shortcut_image_4"], link: homeSettings["home_shortcut_link_4"] },
+    { image: publicHomeSettings["home_shortcut_image_1"], link: publicHomeSettings["home_shortcut_link_1"] },
+    { image: publicHomeSettings["home_shortcut_image_2"], link: publicHomeSettings["home_shortcut_link_2"] },
+    { image: publicHomeSettings["home_shortcut_image_3"], link: publicHomeSettings["home_shortcut_link_3"] },
+    { image: publicHomeSettings["home_shortcut_image_4"], link: publicHomeSettings["home_shortcut_link_4"] },
   ].filter((card): card is { image: string; link: string | null } => typeof card.image === "string" && card.image !== "");
 
   const videoId = getYoutubeId(youtubeUrl);

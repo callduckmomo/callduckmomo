@@ -23,7 +23,7 @@ export default function HomePoster() {
 
   const imageUrl = settings.home_poster_image_url?.trim() || DEFAULT_POSTER_IMAGE_URL;
   const linkUrl = settings.home_poster_link_url?.trim() || null;
-  const isRemoteImage = imageUrl.startsWith("http");
+  const isRemoteImage = imageUrl.startsWith("http") || imageUrl.startsWith("/api/");
 
   const posterContent = (
     <div className="group relative block overflow-hidden rounded-2xl border border-[var(--theme-color)]/30 bg-white shadow-lg shadow-[var(--theme-color)]/10 transition hover:shadow-[var(--theme-color)]/20">

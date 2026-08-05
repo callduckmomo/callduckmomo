@@ -1,7 +1,14 @@
 import { getSettingValue } from "@/lib/settings/repository";
+import { requireAdmin } from "@/lib/auth/server";
 import SettingsForm from "./settings-form";
 
+// This page reads the Master API key and must never be prerendered into a
+// public ISR artifact or CDN cache.
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function SettingsPage() {
+  await requireAdmin();
   const masterUrl = await getSettingValue("MASTER_DOMAIN_URL");
   const apiKey = await getSettingValue("MASTER_API_KEY");
 
