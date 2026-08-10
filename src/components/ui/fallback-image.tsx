@@ -10,6 +10,18 @@ type FallbackImageProps = Omit<ImageProps, "src"> & {
   fallbackSrc?: string | null;
 };
 
+const blockedLegacyImageHosts = new Set([
+  "lzawi1lh5kwfejr4.public.blob.vercel-storage.com",
+]);
+
+function isBlockedLegacyImageUrl(value: string): boolean {
+  try {
+    return blockedLegacyImageHosts.has(new URL(value).hostname);
+  } catch {
+    return false;
+  }
+}
+
 /** Render a tenant image, then a source image, without leaving a broken icon. */
 export function FallbackImage({
   src,
@@ -22,11 +34,12 @@ export function FallbackImage({
   const defaultFallback = "/logos/default.svg";
   const resolvedFallback =
     fallbackSrc && fallbackSrc !== src ? fallbackSrc : defaultFallback;
-  const [currentSrc, setCurrentSrc] = useState(src);
+  const initialSrc = isBlockedLegacyImageUrl(src) ? resolvedFallback : src;
+  const [currentSrc, setCurrentSrc] = useState(initialSrc);
   const [showPlaceholder, setShowPlaceholder] = useState(false);
 
   useEffect(() => {
-    setCurrentSrc(src);
+    setCurrentSrc(isBlockedLegacyImageUrl(src) ? resolvedFallback : src);
     setShowPlaceholder(false);
   }, [src, fallbackSrc]);
 
