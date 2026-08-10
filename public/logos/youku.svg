@@ -1,0 +1,7 @@
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title">
+  <title>Youku</title>
+  <rect width="64" height="64" rx="12" fill="#147BFF"/>
+  <circle cx="32" cy="32" r="19" fill="#fff" opacity=".95"/>
+  <path d="M28 22l13 10-13 10z" fill="#147BFF"/>
+  <path d="M18 50c8 4 20 4 28 0" fill="none" stroke="#7FE5FF" stroke-width="3" stroke-linecap="round"/>
+</svg>

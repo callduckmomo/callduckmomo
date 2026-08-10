@@ -2,6 +2,7 @@ import pool from "@/lib/mysql";
 import type { ExternalProduct, Product, ProductAccount } from "@/lib/products/types";
 import { randomUUID } from "crypto";
 import { safeParseJson } from "@/lib/products/account-parser";
+import { getProductImageFallbackUrl } from "@/lib/products/image-fallback";
 import { getSiteId } from "@/lib/site";
 import { unstable_cache } from "next/cache";
 
@@ -48,6 +49,11 @@ function toProduct(row: any): Product {
     typeId: row.type_id,
     name: row.name,
     imageUrl: row.site_image_url ?? row.image_url ?? null,
+    fallbackImageUrl: getProductImageFallbackUrl({
+      name: row.name,
+      typeId: row.type_id,
+      typeMenu: row.type_menu,
+    }),
     typeImageUrl: row.site_image_url ?? row.image_url ?? null,
     details: row.details ?? null,
     price: row.site_retail_price != null ? Number(row.site_retail_price) : (row.price != null ? Number(row.price) : null),
@@ -303,17 +309,18 @@ export async function getAllCategories(
     );
     const catList = catRows as any[];
 
-    const catById = new Map<string, { name: string; imageUrl: string | null; displayOrder: number }>();
-    const catByName = new Map<string, { id: string; imageUrl: string | null; displayOrder: number }>();
+    const catById = new Map<string, { name: string; imageUrl: string | null; fallbackImageUrl: string; displayOrder: number }>();
+    const catByName = new Map<string, { id: string; imageUrl: string | null; fallbackImageUrl: string; displayOrder: number }>();
 
     catList.forEach(c => {
-      catById.set(c.id, { name: c.name, imageUrl: c.image_url ?? null, displayOrder: c.display_order ?? 0 });
-      catByName.set(c.name, { id: c.id, imageUrl: c.image_url ?? null, displayOrder: c.display_order ?? 0 });
+      const fallbackImageUrl = getProductImageFallbackUrl({ name: c.name, typeMenu: c.name });
+      catById.set(c.id, { name: c.name, imageUrl: c.image_url ?? null, fallbackImageUrl, displayOrder: c.display_order ?? 0 });
+      catByName.set(c.name, { id: c.id, imageUrl: c.image_url ?? null, fallbackImageUrl, displayOrder: c.display_order ?? 0 });
     });
 
     // 2. Fetch Local Published Products
     let localQuery = `
-      SELECT p.id, p.category_id, p.type_menu, p.stock, p.account_data, p.is_published
+      SELECT p.id, p.name, p.type_id, p.category_id, p.type_menu, p.stock, p.account_data, p.is_published
       FROM products p
       WHERE p.is_published = 1 AND (p.is_local = 0 OR (p.is_local = 1 AND p.site_id = ?))
     `;
@@ -326,6 +333,7 @@ export async function getAllCategories(
         categoryId: p.category_id ?? null,
         typeMenu: p.type_menu ?? null,
         imageUrl: null,
+        fallbackImageUrl: getProductImageFallbackUrl({ name: p.name, typeId: p.type_id, typeMenu: p.type_menu }),
         stock,
       };
     });
@@ -359,6 +367,7 @@ export async function getAllCategories(
           categoryId: null,
           typeMenu: p.category || "General",
           imageUrl: p.image_url || null,
+          fallbackImageUrl: getProductImageFallbackUrl({ name: p.name, typeId: p.typeId, typeMenu: p.category }),
           stock: p.stock ?? 999,
         };
       }).filter(Boolean);
@@ -373,13 +382,13 @@ export async function getAllCategories(
     const allProducts = [...localProducts, ...masterProducts];
 
     // 4. Count products per category
-    const categoryCounts = new Map<string, { imageUrl: string | null; fallbackImageUrl: string | null; displayOrder: number; count: number }>();
+    const categoryCounts = new Map<string, { imageUrl: string | null; fallbackImageUrl: string; displayOrder: number; count: number }>();
 
     // Pre-populate with defined categories
     catList.forEach(c => {
       categoryCounts.set(c.name, {
         imageUrl: c.image_url ?? null,
-        fallbackImageUrl: null,
+        fallbackImageUrl: getProductImageFallbackUrl({ name: c.name, typeMenu: c.name }),
         displayOrder: c.display_order ?? 0,
         count: 0,
       });
@@ -388,16 +397,18 @@ export async function getAllCategories(
     allProducts.forEach(p => {
       let catName: string | null = null;
       let catImg: string | null = null;
-      let catFallbackImg: string | null = p.imageUrl ?? null;
+      let catFallbackImg: string = p.fallbackImageUrl;
 
       if (p.categoryId && catById.has(p.categoryId)) {
         const meta = catById.get(p.categoryId)!;
         catName = meta.name;
         catImg = meta.imageUrl;
+        catFallbackImg = meta.fallbackImageUrl;
       } else if (p.typeMenu) {
         catName = p.typeMenu;
         if (catByName.has(p.typeMenu)) {
           catImg = catByName.get(p.typeMenu)!.imageUrl;
+          catFallbackImg = catByName.get(p.typeMenu)!.fallbackImageUrl;
         }
       } else {
         catName = "General";
@@ -413,9 +424,6 @@ export async function getAllCategories(
           });
         }
         const current = categoryCounts.get(catName)!;
-        if (!current.fallbackImageUrl && catFallbackImg) {
-          current.fallbackImageUrl = catFallbackImg;
-        }
         current.count += 1;
       }
     });
@@ -526,13 +534,18 @@ async function _fetchPublishedProductsPaginated(
          const price = localData.price;
          const img = localData.imageUrl || p.image_url;
          const costPrice = (p as any).price ?? (p as any).cost_price ?? p.cost_price;
+         const fallbackImageUrl = p.image_url || getProductImageFallbackUrl({
+           name: p.name,
+           typeId: p.typeId,
+           typeMenu: p.category,
+         });
          
          return {
             id: p.id,
             typeId: p.typeId,
             name: p.name,
             imageUrl: img,
-            fallbackImageUrl: localData.imageUrl ? p.image_url : null,
+            fallbackImageUrl,
             typeImageUrl: img,
             details: p.description,
             price: price,

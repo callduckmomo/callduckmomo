@@ -119,9 +119,9 @@ export default function ProductsGrid({ products }: ProductsGridProps) {
               <div className="flex items-center gap-2">
                 {category !== 'ทั้งหมด' ? (
                   <span className="relative flex size-6 items-center justify-center overflow-hidden rounded-full bg-white/60">
-                    {categoryImage.get(category)?.imageUrl ? (
+                    {categoryImage.get(category)?.imageUrl || categoryImage.get(category)?.fallbackImageUrl ? (
                       <FallbackImage
-                        src={categoryImage.get(category)!.imageUrl!}
+                        src={categoryImage.get(category)!.imageUrl ?? categoryImage.get(category)!.fallbackImageUrl ?? '/logos/default.svg'}
                         fallbackSrc={categoryImage.get(category)!.fallbackImageUrl}
                         alt={category}
                         fill
@@ -146,9 +146,9 @@ export default function ProductsGrid({ products }: ProductsGridProps) {
           >
             <CardHeader className="flex flex-row items-start gap-4">
               <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl bg-[#F4F4F5]">
-                {product.imageUrl ? (
+                {product.imageUrl || product.fallbackImageUrl ? (
                   <FallbackImage
-                    src={product.imageUrl}
+                    src={product.imageUrl ?? product.fallbackImageUrl ?? '/logos/default.svg'}
                     fallbackSrc={product.fallbackImageUrl}
                     alt={product.name}
                     fill

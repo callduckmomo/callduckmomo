@@ -302,7 +302,8 @@ export default function ProductsGridClient({
             {[{ category: 'ทั้งหมด', imageUrl: null, count: totalCategoryCount }, ...sortedCategories].map((item) => {
               const isActive = selectedCategory === item.category
               const meta = categoryMetaMap.get(item.category)
-              const imageUrl = item.category === 'ทั้งหมด' ? null : meta?.imageUrl ?? item.imageUrl ?? null
+              const imageUrl = item.category === 'ทั้งหมด' ? null : meta?.imageUrl ?? item.imageUrl ?? meta?.fallbackImageUrl ?? null
+              const fallbackImageUrl = item.category === 'ทั้งหมด' ? null : meta?.fallbackImageUrl ?? null
               const count = item.category === 'ทั้งหมด' ? totalCategoryCount : meta?.count ?? item.count ?? 0
 
               return (
@@ -323,7 +324,7 @@ export default function ProductsGridClient({
                     ) : imageUrl ? (
                       <FallbackImage
                         src={imageUrl}
-                        fallbackSrc={meta?.fallbackImageUrl}
+                        fallbackSrc={fallbackImageUrl}
                         alt={item.category}
                         fill
                         sizes="40px"
@@ -400,7 +401,8 @@ export default function ProductsGridClient({
               {[{ category: 'ทั้งหมด', imageUrl: null, count: totalCategoryCount }, ...sortedCategories].map((item) => {
                 const isActive = selectedCategory === item.category
                 const meta = categoryMetaMap.get(item.category)
-                const imageUrl = item.category === 'ทั้งหมด' ? null : meta?.imageUrl ?? item.imageUrl ?? null
+                const imageUrl = item.category === 'ทั้งหมด' ? null : meta?.imageUrl ?? item.imageUrl ?? meta?.fallbackImageUrl ?? null
+                const fallbackImageUrl = item.category === 'ทั้งหมด' ? null : meta?.fallbackImageUrl ?? null
                 const count = item.category === 'ทั้งหมด' ? totalCategoryCount : meta?.count ?? item.count ?? 0
 
                 return (
@@ -421,7 +423,7 @@ export default function ProductsGridClient({
                       ) : imageUrl ? (
                         <FallbackImage
                           src={imageUrl}
-                          fallbackSrc={meta?.fallbackImageUrl}
+                          fallbackSrc={fallbackImageUrl}
                           alt={item.category}
                           fill
                           sizes="32px"
@@ -651,9 +653,9 @@ function MobileProductCardItem({ product }: { product: ProductCard }) {
       )}
       <CardContent className="flex flex-col items-center h-full p-5 text-center">
         <div className="relative mb-4 w-full overflow-hidden rounded-2xl aspect-square">
-          {product.imageUrl ? (
+          {product.imageUrl || product.fallbackImageUrl ? (
             <FallbackImage
-              src={product.imageUrl}
+              src={product.imageUrl ?? product.fallbackImageUrl ?? '/logos/default.svg'}
               fallbackSrc={product.fallbackImageUrl}
               alt={product.name}
               fill
@@ -748,9 +750,9 @@ function DesktopProductCardItem({ product }: { product: ProductCard }) {
       <CardContent className="gap-6 py-6 flex h-full flex-col">
         <CardHeader className="flex flex-row items-start gap-4 px-0 pt-0">
           <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl bg-[#F4F4F5]">
-            {product.imageUrl ? (
+            {product.imageUrl || product.fallbackImageUrl ? (
               <FallbackImage
-                src={product.imageUrl}
+                src={product.imageUrl ?? product.fallbackImageUrl ?? '/logos/default.svg'}
                 fallbackSrc={product.fallbackImageUrl}
                 alt={product.name}
                 fill

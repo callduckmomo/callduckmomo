@@ -1,0 +1,6 @@
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title">
+  <title>iQIYI</title>
+  <rect width="64" height="64" rx="12" fill="#00BE78"/>
+  <rect x="8" y="16" width="48" height="32" rx="16" fill="#fff" opacity=".96"/>
+  <text x="32" y="38" text-anchor="middle" font-family="Arial,sans-serif" font-weight="800" font-size="15" fill="#00A968">iQIYI</text>
+</svg>
