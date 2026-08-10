@@ -1,19 +1,42 @@
 import mysql from "mysql2/promise";
 
-const pool = mysql.createPool({
+const globalForMysql = globalThis as typeof globalThis & {
+  __appbymariMysqlPool?: ReturnType<typeof mysql.createPool>;
+  __appbymariMysqlMockPatched?: boolean;
+};
+
+const parsePoolSize = (value: string | undefined, fallback: number) => {
+  const parsed = Number.parseInt(value ?? "", 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+};
+
+const connectionLimit = parsePoolSize(process.env.DB_CONNECTION_LIMIT, 2);
+const maxIdle = Math.min(
+  connectionLimit,
+  parsePoolSize(process.env.DB_MAX_IDLE, 1)
+);
+
+const pool = globalForMysql.__appbymariMysqlPool ?? mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
   port: parseInt(process.env.DB_PORT || "3306", 10),
   waitForConnections: true,
-  connectionLimit: 10,
+  connectionLimit,
+  maxIdle,
+  idleTimeout: 30_000,
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 0,
   queueLimit: 0,
   timezone: "+07:00",
 });
 
+globalForMysql.__appbymariMysqlPool = pool;
+
 // --- MOCK MODE FOR TESTING (BYPASS DB CONNECTION ERROR) ---
-if (process.env.MOCK_DB === "true") {
+if (process.env.MOCK_DB === "true" && !globalForMysql.__appbymariMysqlMockPatched) {
+  globalForMysql.__appbymariMysqlMockPatched = true;
   const originalExecute = pool.execute.bind(pool);
 
   pool.execute = async (sql: any, values?: any) => {
