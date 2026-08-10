@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -13,6 +12,7 @@ import { ProductPriceDisplay } from "@/components/products/product-price-display
 import { VipBadge } from "@/components/products/vip-badge";
 import { useLiveProductStock } from "@/components/products/product-stock-realtime-provider";
 import { cn, normalizeNewlines } from "@/lib/utils";
+import { FallbackImage } from "@/components/ui/fallback-image";
 
 export type FeaturedProduct = {
   id: string;
@@ -23,6 +23,7 @@ export type FeaturedProduct = {
   priceVip: number | null;
   priceWalkin: number | null;
   imageUrl: string | null;
+  fallbackImageUrl?: string | null;
   details: string | null;
   stock: number | null;
   badge: "hot_sale" | "recommended" | null;
@@ -69,8 +70,9 @@ export function FeaturedProductCard({ product }: { product: FeaturedProduct }) {
       {hasVipPrice && <VipBadge />}
       <CardContent className="flex flex-col items-center h-full p-5 text-center">
         <div className="relative mb-4 w-full overflow-hidden rounded-2xl aspect-square">
-          <Image
+          <FallbackImage
             src={logoUrl}
+            fallbackSrc={product.fallbackImageUrl}
             alt={normalizeNewlines(product.name)}
             fill
             sizes="(max-width: 768px) 100vw, 50vw"
@@ -167,8 +169,9 @@ export function FeaturedProductCardDesktop({
         <CardHeader className="flex flex-row items-start gap-4 px-0 pt-0">
           <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl bg-[#F4F4F5]">
             {logoUrl ? (
-              <Image
+              <FallbackImage
                 src={logoUrl}
+                fallbackSrc={product.fallbackImageUrl}
                 alt={normalizeNewlines(product.name)}
                 fill
                 sizes="64px"

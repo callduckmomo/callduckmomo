@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import Image from 'next/image'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -15,12 +14,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner'
 import { subscribeProductStockRealtime } from '@/lib/products/realtime-hub'
 import { useLiveProductStock } from '@/components/products/product-stock-realtime-provider'
+import { FallbackImage } from '@/components/ui/fallback-image'
 
 type ProductCard = {
   id: string
   typeId: string
   name: string
   imageUrl: string | null
+  fallbackImageUrl?: string | null
   typeImageUrl: string | null
   details: string | null
   price: number | null
@@ -34,6 +35,7 @@ type ProductCard = {
 type CategoryInfo = {
   category: string
   imageUrl: string | null
+  fallbackImageUrl?: string | null
   count: number
 }
 
@@ -236,9 +238,13 @@ export default function ProductsGridClient({
   )
 
   const categoryMetaMap = useMemo(() => {
-    const map = new Map<string, { imageUrl: string | null; count: number }>()
+    const map = new Map<string, { imageUrl: string | null; fallbackImageUrl: string | null; count: number }>()
     sortedCategories.forEach((item) => {
-      map.set(item.category, { imageUrl: item.imageUrl, count: item.count })
+      map.set(item.category, {
+        imageUrl: item.imageUrl,
+        fallbackImageUrl: item.fallbackImageUrl ?? null,
+        count: item.count,
+      })
     })
     return map
   }, [sortedCategories])
@@ -315,8 +321,9 @@ export default function ProductsGridClient({
                     {item.category === 'ทั้งหมด' ? (
                       <span className="text-xs font-semibold text-[var(--theme-color-text-accent)]">ALL</span>
                     ) : imageUrl ? (
-                      <Image
+                      <FallbackImage
                         src={imageUrl}
+                        fallbackSrc={meta?.fallbackImageUrl}
                         alt={item.category}
                         fill
                         sizes="40px"
@@ -412,8 +419,9 @@ export default function ProductsGridClient({
                       {item.category === 'ทั้งหมด' ? (
                         <span className="text-[10px] font-bold text-[var(--theme-color)]">ALL</span>
                       ) : imageUrl ? (
-                        <Image
+                        <FallbackImage
                           src={imageUrl}
+                          fallbackSrc={meta?.fallbackImageUrl}
                           alt={item.category}
                           fill
                           sizes="32px"
@@ -644,8 +652,9 @@ function MobileProductCardItem({ product }: { product: ProductCard }) {
       <CardContent className="flex flex-col items-center h-full p-5 text-center">
         <div className="relative mb-4 w-full overflow-hidden rounded-2xl aspect-square">
           {product.imageUrl ? (
-            <Image
+            <FallbackImage
               src={product.imageUrl}
+              fallbackSrc={product.fallbackImageUrl}
               alt={product.name}
               fill
               sizes="(max-width: 768px) 100vw, 50vw"
@@ -740,8 +749,9 @@ function DesktopProductCardItem({ product }: { product: ProductCard }) {
         <CardHeader className="flex flex-row items-start gap-4 px-0 pt-0">
           <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl bg-[#F4F4F5]">
             {product.imageUrl ? (
-              <Image
+              <FallbackImage
                 src={product.imageUrl}
+                fallbackSrc={product.fallbackImageUrl}
                 alt={product.name}
                 fill
                 sizes="64px"

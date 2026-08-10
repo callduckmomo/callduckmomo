@@ -1,5 +1,4 @@
 // Test deployment auto trigger by Mimi #3
-import Image from "next/image";
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { Badge } from "@/components/ui/badge";
@@ -39,6 +38,7 @@ import {
   type FeaturedProduct,
 } from "@/components/products/featured-product-cards";
 import { BreadcrumbJsonLd } from "@/components/seo/json-ld";
+import { FallbackImage } from "@/components/ui/fallback-image";
 
 import { getSiteId } from "@/lib/site";
 import { getSiteConfig } from "@/lib/site-config";
@@ -168,6 +168,7 @@ async function ProductsSection() {
     typeId: product.typeId,
     name: product.name,
     imageUrl: product.imageUrl,
+    fallbackImageUrl: product.fallbackImageUrl,
     typeImageUrl: product.typeImageUrl,
     details: product.details,
     price: product.price,
@@ -180,6 +181,7 @@ async function ProductsSection() {
   const gridInitialCategories = (gridCategories || []).map((c) => ({
     category: c.category,
     imageUrl: c.imageUrl,
+    fallbackImageUrl: c.fallbackImageUrl,
     count: c.count,
   }));
 
@@ -192,6 +194,7 @@ async function ProductsSection() {
     priceVip: product.priceVip,
     priceWalkin: product.priceWalkin,
     imageUrl: product.imageUrl,
+    fallbackImageUrl: product.fallbackImageUrl,
     details: product.details,
     stock: product.stock,
     badge: product.badge,
@@ -348,7 +351,7 @@ function RecentOrderChip({ order }: { order: RecentOrder }) {
   return (
     <div className="flex min-w-[200px] sm:min-w-[260px] items-center gap-2 sm:gap-3 rounded-lg border border-[var(--theme-color)]/30 bg-white px-3 sm:px-4 py-2 text-[#0B0B0B] shadow-sm shadow-[var(--theme-color)]/10">
       <span className="relative flex size-9 items-center justify-center overflow-hidden rounded-md bg-[#F4F4F5]">
-        <Image
+        <FallbackImage
           src={imageUrl}
           alt={order.productName}
           fill

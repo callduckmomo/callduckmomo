@@ -284,7 +284,7 @@ export async function bulkUpdatePublishStatus(
 
 export async function getAllCategories(
   onlyPublishedWithStock: boolean = false
-): Promise<Array<{ category: string; imageUrl: string | null; count: number }>> {
+): Promise<Array<{ category: string; imageUrl: string | null; fallbackImageUrl: string | null; count: number }>> {
   try {
     if (!(await isChildSiteApiEnabled())) return [];
     const siteId = getSiteId();
@@ -325,6 +325,7 @@ export async function getAllCategories(
         id: p.id,
         categoryId: p.category_id ?? null,
         typeMenu: p.type_menu ?? null,
+        imageUrl: null,
         stock,
       };
     });
@@ -357,6 +358,7 @@ export async function getAllCategories(
           id: p.id,
           categoryId: null,
           typeMenu: p.category || "General",
+          imageUrl: p.image_url || null,
           stock: p.stock ?? 999,
         };
       }).filter(Boolean);
@@ -371,12 +373,13 @@ export async function getAllCategories(
     const allProducts = [...localProducts, ...masterProducts];
 
     // 4. Count products per category
-    const categoryCounts = new Map<string, { imageUrl: string | null; displayOrder: number; count: number }>();
+    const categoryCounts = new Map<string, { imageUrl: string | null; fallbackImageUrl: string | null; displayOrder: number; count: number }>();
 
     // Pre-populate with defined categories
     catList.forEach(c => {
       categoryCounts.set(c.name, {
         imageUrl: c.image_url ?? null,
+        fallbackImageUrl: null,
         displayOrder: c.display_order ?? 0,
         count: 0,
       });
@@ -385,6 +388,7 @@ export async function getAllCategories(
     allProducts.forEach(p => {
       let catName: string | null = null;
       let catImg: string | null = null;
+      let catFallbackImg: string | null = p.imageUrl ?? null;
 
       if (p.categoryId && catById.has(p.categoryId)) {
         const meta = catById.get(p.categoryId)!;
@@ -403,11 +407,15 @@ export async function getAllCategories(
         if (!categoryCounts.has(catName)) {
           categoryCounts.set(catName, {
             imageUrl: catImg,
+            fallbackImageUrl: catFallbackImg,
             displayOrder: 999,
             count: 0,
           });
         }
         const current = categoryCounts.get(catName)!;
+        if (!current.fallbackImageUrl && catFallbackImg) {
+          current.fallbackImageUrl = catFallbackImg;
+        }
         current.count += 1;
       }
     });
@@ -416,6 +424,7 @@ export async function getAllCategories(
     const result = Array.from(categoryCounts.entries()).map(([category, info]) => ({
       category,
       imageUrl: info.imageUrl,
+      fallbackImageUrl: info.fallbackImageUrl,
       count: info.count,
     }));
 
@@ -523,6 +532,7 @@ async function _fetchPublishedProductsPaginated(
             typeId: p.typeId,
             name: p.name,
             imageUrl: img,
+            fallbackImageUrl: localData.imageUrl ? p.image_url : null,
             typeImageUrl: img,
             details: p.description,
             price: price,

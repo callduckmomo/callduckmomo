@@ -88,6 +88,17 @@ function extractMasterProducts(value: unknown): unknown[] {
   return [];
 }
 
+function resolveMasterImageUrl(value: string, masterUrl: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+
+  try {
+    return new URL(trimmed, `${masterUrl}/`).toString();
+  } catch {
+    return trimmed;
+  }
+}
+
 export async function fetchProductsFromMaster(): Promise<MasterProduct[]> {
   const masterUrl = (await getSettingValue("MASTER_DOMAIN_URL")) || process.env.NEXT_PUBLIC_MASTER_DOMAIN_URL;
   const apiKey = (await getSettingValue("MASTER_API_KEY")) || process.env.MASTER_API_KEY;
@@ -114,9 +125,16 @@ export async function fetchProductsFromMaster(): Promise<MasterProduct[]> {
     }
 
     const data: unknown = await res.json();
-    return extractMasterProducts(data)
+    const products = extractMasterProducts(data)
       .map(normalizeMasterProduct)
       .filter((product): product is MasterProduct => product !== null);
+
+    // The master API can return relative paths such as /uploads/products/...
+    // Resolve them once so storefront fallbacks remain valid on the child site.
+    return products.map((product) => ({
+      ...product,
+      image_url: resolveMasterImageUrl(product.image_url, cleanUrl),
+    }));
   } catch (error) {
     console.error("Error fetching master products:", error);
     return [];

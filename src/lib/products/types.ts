@@ -44,6 +44,8 @@ export type Product = {
   typeId: string;
   name: string;
   imageUrl: string | null;
+  /** Optional source image used when a tenant override cannot be loaded. */
+  fallbackImageUrl?: string | null;
   typeImageUrl: string | null;
   details: string | null;
   price: number | null;

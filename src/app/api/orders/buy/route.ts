@@ -3,7 +3,7 @@ import { z } from "zod";
 
 export const maxDuration = 60;
 
-import { requireUser } from "@/lib/auth/server";
+import { getCurrentUser } from "@/lib/auth/server";
 import { buyExternalProduct, fetchExternalOrderHistory } from "@/lib/products/external";
 import { recordExternalOrder } from "@/lib/orders/repository";
 import {
@@ -42,7 +42,20 @@ function afterResponse(task: () => Promise<void>): void {
 }
 
 export async function POST(request: NextRequest) {
-  const user = await requireUser();
+  // API callers need a JSON auth response. A redirect from a POST route uses
+  // HTTP 307 and preserves the method, which turns the follow-up request to
+  // /login into a misleading 405 from the page route.
+  const user = await getCurrentUser();
+  if (!user) {
+    return NextResponse.json(
+      {
+        ok: false,
+        code: "AUTH_REQUIRED",
+        message: "กรุณาเข้าสู่ระบบก่อนสั่งซื้อ",
+      },
+      { status: 401 }
+    );
+  }
 
   const contentType = request.headers.get("content-type") ?? "";
   if (!contentType.includes("application/json")) {

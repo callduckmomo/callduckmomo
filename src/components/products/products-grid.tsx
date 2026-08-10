@@ -1,7 +1,6 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import Image from 'next/image'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -9,12 +8,14 @@ import { Search } from 'lucide-react'
 import { cn, normalizeNewlines } from '@/lib/utils'
 import { PurchaseProductButton } from '@/components/orders/purchase-product-button'
 import { Button } from '@/components/ui/button'
+import { FallbackImage } from '@/components/ui/fallback-image'
 
 type ProductCard = {
   id: string
   typeId: string
   name: string
   imageUrl: string | null
+  fallbackImageUrl?: string | null
   typeImageUrl: string | null
   details: string | null
   price: number | null
@@ -43,10 +44,13 @@ export default function ProductsGrid({ products }: ProductsGridProps) {
   }, [products])
 
   const categoryImage = useMemo(() => {
-    const map = new Map<string, string | null>()
+    const map = new Map<string, { imageUrl: string | null; fallbackImageUrl: string | null }>()
     products.forEach((product) => {
       if (product.typeMenu) {
-        map.set(product.typeMenu, product.typeImageUrl ?? product.imageUrl)
+        map.set(product.typeMenu, {
+          imageUrl: product.typeImageUrl ?? product.imageUrl,
+          fallbackImageUrl: product.fallbackImageUrl ?? null,
+        })
       }
     })
     return map
@@ -115,9 +119,10 @@ export default function ProductsGrid({ products }: ProductsGridProps) {
               <div className="flex items-center gap-2">
                 {category !== 'ทั้งหมด' ? (
                   <span className="relative flex size-6 items-center justify-center overflow-hidden rounded-full bg-white/60">
-                    {categoryImage.get(category) ? (
-                      <Image
-                        src={categoryImage.get(category)!}
+                    {categoryImage.get(category)?.imageUrl ? (
+                      <FallbackImage
+                        src={categoryImage.get(category)!.imageUrl!}
+                        fallbackSrc={categoryImage.get(category)!.fallbackImageUrl}
                         alt={category}
                         fill
                         className="object-contain"
@@ -142,8 +147,9 @@ export default function ProductsGrid({ products }: ProductsGridProps) {
             <CardHeader className="flex flex-row items-start gap-4">
               <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl bg-[#F4F4F5]">
                 {product.imageUrl ? (
-                  <Image
+                  <FallbackImage
                     src={product.imageUrl}
+                    fallbackSrc={product.fallbackImageUrl}
                     alt={product.name}
                     fill
                     sizes="64px"
@@ -210,4 +216,3 @@ export default function ProductsGrid({ products }: ProductsGridProps) {
     </div>
   )
 }
-
