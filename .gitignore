@@ -58,6 +58,13 @@ Thumbs.db
 *.zip
 *.dump
 
+# Local/private artifacts: keep out of public Git and deployments
+/Account Access.docx
+/test_products.json
+/fix.js
+/fix2.js
+/upload.js
+
 /src/generated/prisma
 
 # Uploads
