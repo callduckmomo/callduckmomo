@@ -22,6 +22,8 @@ const pool = globalForMysql.__appbymariMysqlPool ?? mysql.createPool({
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
   port: parseInt(process.env.DB_PORT || "3306", 10),
+  // Keep account details on 4-byte UTF-8 connections (emoji and symbols).
+  charset: "utf8mb4",
   waitForConnections: true,
   connectionLimit,
   maxIdle,

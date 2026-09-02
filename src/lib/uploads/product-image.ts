@@ -15,8 +15,6 @@ export const PRODUCT_IMAGE_ALLOWED_CONTENT_TYPES = [
   "image/heif",
 ] as const;
 
-export const PRODUCT_IMAGE_UPLOAD_PREFIX = "product-images/";
-
 const PRODUCT_IMAGE_EXTENSION_CONTENT_TYPES: Record<string, string> = {
   avif: "image/avif",
   bmp: "image/bmp",

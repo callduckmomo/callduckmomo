@@ -5,20 +5,86 @@ import { randomUUID } from "crypto";
 import { safeParseJson } from "@/lib/products/account-parser";
 import { getSiteId } from "@/lib/site";
 
+const globalForOrderRepository = globalThis as typeof globalThis & {
+  __appbymariOrdersProductDetailsEncoding?: Promise<void>;
+};
 
-function toOrder(row: any): Order {
-  let rawResponse: any = null;
-  if (row.raw_response) {
-    if (typeof row.raw_response === 'string') {
-      try {
-        rawResponse = JSON.parse(row.raw_response);
-      } catch {
-        rawResponse = null;
+/** Upgrade installations whose old orders table used utf8mb3 for details. */
+async function ensureOrderProductDetailsEncoding(): Promise<void> {
+  if (!globalForOrderRepository.__appbymariOrdersProductDetailsEncoding) {
+    globalForOrderRepository.__appbymariOrdersProductDetailsEncoding = (async () => {
+      const [columns] = await pool.execute(
+        `SELECT DATA_TYPE, CHARACTER_SET_NAME
+         FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE()
+           AND TABLE_NAME = 'orders'
+           AND COLUMN_NAME = 'product_details'
+         LIMIT 1`
+      );
+      const column = (columns as any[])[0];
+
+      if (
+        column?.DATA_TYPE?.toLowerCase() === "longtext" &&
+        column?.CHARACTER_SET_NAME?.toLowerCase() === "utf8mb4"
+      ) {
+        return;
       }
-    } else {
-      rawResponse = row.raw_response;
+
+      await pool.execute(
+         `ALTER TABLE orders
+         MODIFY COLUMN product_details LONGTEXT
+         CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL`
+      );
+    })()
+      .then(() => undefined)
+      .catch((error) => {
+        globalForOrderRepository.__appbymariOrdersProductDetailsEncoding = undefined;
+        throw error;
+      });
+  }
+
+  await globalForOrderRepository.__appbymariOrdersProductDetailsEncoding;
+}
+
+function parseRawResponse(value: unknown): Record<string, unknown> | null {
+  if (!value) return null;
+
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      return parsed && typeof parsed === "object"
+        ? (parsed as Record<string, unknown>)
+        : null;
+    } catch {
+      return null;
     }
   }
+
+  return typeof value === "object"
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+function getRawProductDetails(rawResponse: Record<string, unknown> | null): string | null {
+  const direct = rawResponse?.textdb;
+  if (typeof direct === "string" && direct.length > 0) return direct;
+
+  const data = rawResponse?.data;
+  if (data && typeof data === "object") {
+    const nested = (data as Record<string, unknown>).textdb;
+    if (typeof nested === "string" && nested.length > 0) return nested;
+  }
+
+  return null;
+}
+
+
+function toOrder(row: any): Order {
+  const rawResponse = parseRawResponse(row.raw_response);
+  // raw_response is stored as utf8mb4 and contains the source textdb. Prefer
+  // it when available so historical orders keep their original emoji/symbols
+  // even if product_details was written through the old utf8mb3 column.
+  const rawProductDetails = getRawProductDetails(rawResponse);
 
   return {
     id: row.id,
@@ -26,7 +92,7 @@ function toOrder(row: any): Order {
     productTypeId: row.product_type_id,
     productName: row.product_name,
     productImage: row.product_image ?? null,
-    productDetails: row.product_details ?? null,
+    productDetails: rawProductDetails ?? row.product_details ?? null,
     accountEmail: row.account_email ?? null,
     accountPassword: row.account_password ?? null,
     price: row.price !== null ? Number(row.price) : null,
@@ -58,6 +124,7 @@ export async function recordExternalOrder({
   external,
 }: CreateOrderInput): Promise<Order> {
   try {
+    await ensureOrderProductDetailsEncoding();
     const siteId = getSiteId();
     // ดึงข้อมูลสินค้าเมตาดาต้า
     const [productRows] = await pool.execute(

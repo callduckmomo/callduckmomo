@@ -24,7 +24,6 @@
     "@radix-ui/react-tabs": "^1.1.13",
     "@supabase/supabase-js": "^2.106.1",
     "@types/qs": "^6.14.0",
-    "@vercel/blob": "^2.6.1",
     "axios": "^1.13.2",
     "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -68,7 +68,21 @@ export default function ProductsGridClient({
   const skipNextFetchRef = useRef(hasInitialData)
   const hasLoadedRef = useRef(hasInitialData)
   const refreshTimerRef = useRef<number | null>(null)
+  const revisionControllerRef = useRef<AbortController | null>(null)
+  const lastRevisionRef = useRef<string | null>(null)
+  const lastFullRefreshRef = useRef(hasInitialData ? Date.now() : 0)
+  const fullRefreshPendingRef = useRef(false)
+  const forceFreshRef = useRef(false)
   const itemsPerPage = 12
+
+  const requestFullRefresh = useCallback((forceFresh = true) => {
+    forceFreshRef.current = forceFresh
+    if (fullRefreshPendingRef.current) {
+      return
+    }
+    fullRefreshPendingRef.current = true
+    setRealtimeRefreshVersion((version) => version + 1)
+  }, [])
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -111,30 +125,85 @@ export default function ProductsGridClient({
         window.clearTimeout(refreshTimerRef.current)
       }
       refreshTimerRef.current = window.setTimeout(() => {
-        setRealtimeRefreshVersion((version) => version + 1)
+        requestFullRefresh()
       }, 100)
     })
-  }, [])
+  }, [requestFullRefresh])
 
   useEffect(() => {
-    const refresh = () => {
-      if (document.visibilityState === 'visible') {
-        setRealtimeRefreshVersion((version) => version + 1)
+    let cancelled = false
+
+    const checkRevision = async () => {
+      if (cancelled || document.visibilityState !== 'visible') {
+        return
+      }
+
+      revisionControllerRef.current?.abort()
+      const controller = new AbortController()
+      revisionControllerRef.current = controller
+
+      try {
+        const response = await fetch('/api/products/revision', {
+          signal: controller.signal,
+          cache: 'no-store',
+        })
+        if (!response.ok) {
+          return
+        }
+
+        const data = (await response.json()) as { revision?: string }
+        if (cancelled || !data.revision) {
+          return
+        }
+
+        if (lastRevisionRef.current === null) {
+          lastRevisionRef.current = data.revision
+          return
+        }
+
+        if (lastRevisionRef.current !== data.revision) {
+          lastRevisionRef.current = data.revision
+          requestFullRefresh()
+          return
+        }
+
+        // Master stock can change outside this database. Reconcile it at a
+        // deliberately slow interval while the tab is visible.
+        if (
+          lastFullRefreshRef.current > 0 &&
+          Date.now() - lastFullRefreshRef.current >= 5 * 60_000
+        ) {
+          requestFullRefresh()
+        }
+      } catch (error) {
+        if ((error as Error).name !== 'AbortError') {
+          console.warn('[products] revision check failed')
+        }
       }
     }
-    const interval = window.setInterval(refresh, 30_000)
-    window.addEventListener('focus', refresh)
-    document.addEventListener('visibilitychange', refresh)
+
+    const interval = window.setInterval(() => {
+      void checkRevision()
+    }, 60_000)
+    const handleActivity = () => {
+      void checkRevision()
+    }
+    window.addEventListener('focus', handleActivity)
+    document.addEventListener('visibilitychange', handleActivity)
+    void checkRevision()
 
     return () => {
+      cancelled = true
       window.clearInterval(interval)
-      window.removeEventListener('focus', refresh)
-      document.removeEventListener('visibilitychange', refresh)
+      revisionControllerRef.current?.abort()
+      revisionControllerRef.current = null
+      window.removeEventListener('focus', handleActivity)
+      document.removeEventListener('visibilitychange', handleActivity)
       if (refreshTimerRef.current !== null) {
         window.clearTimeout(refreshTimerRef.current)
       }
     }
-  }, [])
+  }, [requestFullRefresh])
 
   useEffect(() => {
     let cancelled = false
@@ -164,7 +233,6 @@ export default function ProductsGridClient({
         pagination: 'true',
         page: String(currentPage),
         limit: String(itemsPerPage),
-        live: '1',
       })
 
       if (selectedCategory && selectedCategory !== 'ทั้งหมด') {
@@ -178,8 +246,9 @@ export default function ProductsGridClient({
       try {
         const res = await fetch(`/api/products?${params.toString()}`, {
           signal: controller.signal,
-          cache: 'no-store',
+          cache: forceFreshRef.current ? 'no-store' : 'default',
         })
+        forceFreshRef.current = false
 
         if (!res.ok) {
           throw new Error('failed')
@@ -191,6 +260,7 @@ export default function ProductsGridClient({
           page: number
           totalPages: number
           categories?: CategoryInfo[]
+          revision?: string
         }
 
         if (cancelled) {
@@ -201,6 +271,11 @@ export default function ProductsGridClient({
         setTotal(data.total)
         setTotalPages(data.totalPages)
         hasLoadedRef.current = true
+        fullRefreshPendingRef.current = false
+        lastFullRefreshRef.current = Date.now()
+        if (data.revision) {
+          lastRevisionRef.current = data.revision
+        }
 
         if (data.categories) {
           setAllCategories(data.categories)
@@ -213,6 +288,7 @@ export default function ProductsGridClient({
           toast.error('โหลดรายการสินค้าไม่สำเร็จ')
         }
       } finally {
+        fullRefreshPendingRef.current = false
         if (!cancelled && showLoadingState) {
           setIsLoading(false)
         }

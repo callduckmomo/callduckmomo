@@ -91,6 +91,8 @@ export function OrderDetailsDialog({
   price: number | null;
   purchaseDate: string | null;
 }) {
+  const normalizedProductDetails = normalizeNewlines(productDetails);
+
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -141,12 +143,12 @@ export function OrderDetailsDialog({
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-semibold text-[#0B0B0B]">รายละเอียดบัญชี</p>
-                <CopyButton text={productDetails.replace(/<[^>]+>/g, '')} />
+                <CopyButton text={normalizedProductDetails} />
               </div>
               <div 
                 className="max-h-96 overflow-auto rounded-2xl bg-[#fff4ed] border border-[var(--theme-color)]/20 p-4 text-xs text-[#0B0B0B] break-all whitespace-pre-wrap font-mono leading-relaxed"
               >
-                {productDetails.replace(/<[^>]+>/g, '')}
+                {normalizedProductDetails}
               </div>
             </div>
           ) : null}

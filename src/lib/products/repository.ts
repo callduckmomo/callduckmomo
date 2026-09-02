@@ -490,6 +490,80 @@ export async function fetchPublishedProductsPaginatedLive(
   return _fetchPublishedProductsPaginated(limit, offset, category, searchTerm);
 }
 
+/**
+ * Small, credential-free revision token for storefront reconciliation.
+ *
+ * The client can poll this endpoint without reloading every product row or
+ * calling the Master catalog. A full catalog read happens only after this
+ * token changes (or on the slower fallback interval for external Master stock
+ * changes).
+ */
+export async function getPublishedProductsRevision(): Promise<string> {
+  const siteId = getSiteId();
+
+  try {
+    const [productResult, sitePriceResult, categoryResult] = await Promise.all([
+      pool.execute(
+        `SELECT COALESCE(MAX(updated_at), '1970-01-01 00:00:00') AS updated_at,
+                COUNT(*) AS row_count
+         FROM products
+         WHERE (is_local = 0 OR (is_local = 1 AND site_id = ?))`,
+        [siteId]
+      ),
+      pool.execute(
+        `SELECT COALESCE(MAX(spp.updated_at), '1970-01-01 00:00:00') AS updated_at,
+                COUNT(*) AS row_count
+         FROM site_product_prices spp
+         INNER JOIN products p ON p.id = spp.product_id
+         WHERE spp.site_id = ?
+           AND (p.is_local = 0 OR (p.is_local = 1 AND p.site_id = ?))`,
+        [siteId, siteId]
+      ),
+      pool.execute(
+        `SELECT COALESCE(MAX(updated_at), '1970-01-01 00:00:00') AS updated_at,
+                COUNT(*) AS row_count
+         FROM categories
+         WHERE (
+           (COALESCE(is_local, 0) = 0 AND
+             (site_id IS NULL OR site_id = '' OR site_id = 'main'))
+           OR (is_local = 1 AND site_id = ?)
+         )`,
+        [siteId]
+      ),
+    ]);
+
+    let localPriceRevision = "missing:0";
+    try {
+      const [localPriceRows] = await pool.execute(
+        `SELECT COALESCE(MAX(updated_at), '1970-01-01 00:00:00') AS updated_at,
+                COUNT(*) AS row_count
+         FROM local_product_prices`
+      );
+      const row = (localPriceRows as any[])[0] ?? {};
+      localPriceRevision = `${String(row.updated_at)}:${String(row.row_count ?? 0)}`;
+    } catch {
+      // Older installations may not have the optional master-price table yet.
+    }
+
+    const revisionPart = (result: any) => {
+      const row = (result[0] as any[])[0] ?? {};
+      return `${String(row.updated_at)}:${String(row.row_count ?? 0)}`;
+    };
+
+    return [
+      revisionPart(productResult),
+      revisionPart(sitePriceResult),
+      revisionPart(categoryResult),
+      localPriceRevision,
+    ].join("|");
+  } catch (error) {
+    console.error("Error in getPublishedProductsRevision:", error);
+    // A changing fallback forces a safe full read instead of serving a stale
+    // catalog if the lightweight revision query is temporarily unavailable.
+    return `error:${Date.now()}`;
+  }
+}
+
 async function _fetchPublishedProductsPaginated(
   limit: number = 12,
   offset: number = 0,

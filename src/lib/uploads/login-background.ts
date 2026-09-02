@@ -12,8 +12,6 @@ export const LOGIN_BACKGROUND_ALLOWED_CONTENT_TYPES = [
   "image/bmp",
 ] as const;
 
-export const LOGIN_BACKGROUND_UPLOAD_PREFIX = "login-background/";
-
 const LOGIN_BACKGROUND_EXTENSION_CONTENT_TYPES: Record<string, string> = {
   avif: "image/avif",
   bmp: "image/bmp",

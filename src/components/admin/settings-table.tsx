@@ -9,14 +9,13 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { upload } from "@vercel/blob/client";
+import { uploadAdminLoginBackground } from "@/lib/admin/image-upload-client";
 import { testMasterConnection, getTenantBalance } from "@/app/admin/settings/actions";
 import {
   isLoginBackgroundAspectRatioAllowed,
   LOGIN_BACKGROUND_MAX_FILE_SIZE,
   LOGIN_BACKGROUND_MIN_HEIGHT,
   LOGIN_BACKGROUND_MIN_WIDTH,
-  LOGIN_BACKGROUND_UPLOAD_PREFIX,
   resolveLoginBackgroundContentType,
 } from "@/lib/uploads/login-background";
 
@@ -195,26 +194,12 @@ export default function SettingsTable() {
         return;
       }
 
-      const safeFileName =
-        file.name
-          .toLowerCase()
-          .replace(/[^a-z0-9._-]+/g, "-")
-          .replace(/^-+|-+$/g, "") || "background";
-
-      const blob = await upload(
-        `${LOGIN_BACKGROUND_UPLOAD_PREFIX}${Date.now()}-${safeFileName}`,
+      const imageUrl = await uploadAdminLoginBackground(
         file,
-        {
-          access: "public",
-          contentType,
-          handleUploadUrl: "/api/admin/uploads/login-background",
-          onUploadProgress: ({ percentage }) => {
-            setLoginBackgroundUploadProgress(Math.round(percentage));
-          },
-        }
+        (percentage) => setLoginBackgroundUploadProgress(percentage)
       );
 
-      handleDraftChange("login_bg_image", blob.url);
+      handleDraftChange("login_bg_image", imageUrl);
       toast.success(
         `อัปโหลด Background ต้นฉบับ ${dimensions.width}×${dimensions.height}px สำเร็จ กรุณากดบันทึกการตั้งค่าทั้งหมด`
       );
