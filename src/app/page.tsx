@@ -43,12 +43,17 @@ import { FallbackImage } from "@/components/ui/fallback-image";
 import { getSiteId } from "@/lib/site";
 import { DEFAULT_SITE_TITLE, getSiteConfig } from "@/lib/site-config";
 import { mapPublicMediaSettings } from "@/lib/settings/public-media";
+import { loadLayoutPublicSettings } from "@/lib/settings/load-layout-public-settings";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { siteName } = getSiteConfig();
+  const publicSettings = await loadLayoutPublicSettings();
+  const siteTitle = publicSettings.site_title?.trim() || DEFAULT_SITE_TITLE;
   return {
-    title: DEFAULT_SITE_TITLE,
-    description: `${siteName} - ศูนย์รวมสินค้าและบริการพรีเมียมคุณภาพสูง`,
+    title: siteTitle,
+    description:
+      publicSettings.site_description?.trim() ||
+      `${siteName} - ศูนย์รวมสินค้าและบริการพรีเมียมคุณภาพสูง`,
     keywords: [siteName, "Shop", "พรีเมียม"],
   };
 }
