@@ -12,7 +12,7 @@ export type SiteConfig = {
  * Keep this in one place so the layout and the home page cannot drift apart.
  */
 export const DEFAULT_SITE_TITLE =
-  "🦆💎 CallDuck Store | Premium ที่ใช่ ในราคาที่คุ้มกว่า 💖";
+  "CallDuck Store 🦆| รวมความ premium ราคาน่ารัก 💖";
 
 /**
  * คืนค่า config ของเว็บไซต์ปัจจุบัน (เว็บหลัก vs เว็บลูก)
