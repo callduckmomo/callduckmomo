@@ -41,13 +41,13 @@ import { BreadcrumbJsonLd } from "@/components/seo/json-ld";
 import { FallbackImage } from "@/components/ui/fallback-image";
 
 import { getSiteId } from "@/lib/site";
-import { getSiteConfig } from "@/lib/site-config";
+import { DEFAULT_SITE_TITLE, getSiteConfig } from "@/lib/site-config";
 import { mapPublicMediaSettings } from "@/lib/settings/public-media";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { siteName } = getSiteConfig();
   return {
-    title: "Shop",
+    title: DEFAULT_SITE_TITLE,
     description: `${siteName} - ศูนย์รวมสินค้าและบริการพรีเมียมคุณภาพสูง`,
     keywords: [siteName, "Shop", "พรีเมียม"],
   };

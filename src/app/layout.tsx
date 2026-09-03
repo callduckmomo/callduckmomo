@@ -10,7 +10,7 @@ import { PublicSettingsProvider } from "@/components/public-settings-provider";
 import { ProductStockRealtimeProvider } from "@/components/products/product-stock-realtime-provider";
 import { loadLayoutPublicSettings } from "@/lib/settings/load-layout-public-settings";
 import { OrganizationJsonLd, WebSiteJsonLd } from "@/components/seo/json-ld";
-import { getSiteConfig } from "@/lib/site-config";
+import { DEFAULT_SITE_TITLE, getSiteConfig } from "@/lib/site-config";
 import { checkTenantStatus } from "@/lib/api-master/tenant";
 import { AlertTriangle } from "@/components/ui/icons";
 import "./globals.css";
@@ -25,12 +25,16 @@ const notoSansThai = Noto_Sans_Thai({
 export async function generateMetadata(): Promise<Metadata> {
   const { siteName: defaultSiteName, siteUrl } = getSiteConfig();
   const publicSettings = await loadLayoutPublicSettings();
-  const siteTitle = publicSettings.site_title || "Shop";
+  const siteTitle = publicSettings.site_title?.trim() || DEFAULT_SITE_TITLE;
   const shortTitle = siteTitle.split('|')[0].trim();
 
   const siteDescription = publicSettings.site_description || `${defaultSiteName} - ศูนย์รวมสินค้าและบริการพรีเมียมคุณภาพสูง`;
 
   const siteLogo = publicSettings.site_logo_url || undefined;
+  // `site_logo_url` is mapped to a versioned database-media URL for uploaded
+  // images. Referencing that same URL keeps the browser favicon in sync with
+  // the navbar logo whenever the admin replaces the logo.
+  const faviconUrl = siteLogo || "/logo.webp";
 
   return {
     metadataBase: new URL(siteUrl),
@@ -39,6 +43,11 @@ export async function generateMetadata(): Promise<Metadata> {
       template: `%s | ${shortTitle}`,
     },
     description: siteDescription,
+    icons: {
+      icon: faviconUrl,
+      shortcut: faviconUrl,
+      apple: faviconUrl,
+    },
   keywords: [
     // Main keywords
     defaultSiteName,

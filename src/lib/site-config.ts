@@ -8,6 +8,13 @@ export type SiteConfig = {
 };
 
 /**
+ * Browser title used when an installation has not configured a custom title.
+ * Keep this in one place so the layout and the home page cannot drift apart.
+ */
+export const DEFAULT_SITE_TITLE =
+  "🦆💎 CallDuck Store | Premium ที่ใช่ ในราคาที่คุ้มกว่า 💖";
+
+/**
  * คืนค่า config ของเว็บไซต์ปัจจุบัน (เว็บหลัก vs เว็บลูก)
  * ใช้ได้ทั้ง server และ client side
  */
@@ -20,6 +27,7 @@ export function getSiteConfig(): SiteConfig {
       siteId,
       siteName: "ชื่อร้าน",
       siteUrl:
+        process.env.NEXT_PUBLIC_SITE_URL ||
         process.env.NEXT_PUBLIC_BASE_URL ||
         "https://new-child-site.vercel.app",
       isChildSite: true,
@@ -30,7 +38,9 @@ export function getSiteConfig(): SiteConfig {
     siteId,
     siteName: "ชื่อร้าน",
     siteUrl:
-      process.env.NEXT_PUBLIC_BASE_URL || "https://appbymari.com",
+      process.env.NEXT_PUBLIC_SITE_URL ||
+      process.env.NEXT_PUBLIC_BASE_URL ||
+      "https://appbymari.com",
     isChildSite: false,
   };
 }
